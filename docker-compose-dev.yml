@@ -20,3 +20,17 @@ services:
    restart: unless-stopped
    ports:
      - "8081:8081"
+ springapp:
+   image: springapp:latest
+   environment:
+     MONGODB_URI: mongodb://mongo:27017/myDB
+   ports:
+     - 8082:8082
+ python:
+   image: flask-restapi:latest
+   ports:
+     - 5000:5000
+ frontend:
+   image: frontend:latest
+   ports:
+     - 4200:80

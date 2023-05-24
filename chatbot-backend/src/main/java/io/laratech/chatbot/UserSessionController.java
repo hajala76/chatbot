@@ -1,6 +1,10 @@
 package io.laratech.chatbot;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,15 +46,28 @@ public class UserSessionController {
    @PutMapping("/{id}")
    public String update(@RequestBody String messageFromFrontend, @PathVariable String id) throws IOException, InterruptedException {
 
-       // set conversation from frontend
-       userSessionService.update(id, messageFromFrontend.replaceAll("\"", ""));
-       System.out.println(messageFromFrontend);
+      // set conversation from frontend
+      userSessionService.update(id, messageFromFrontend.replaceAll("\"", ""));
+      System.out.println(messageFromFrontend);
 
-       // save answer to db
-       userSessionService.update(id, "answer");
+      // send message to python service
+      String uri = "http://host.docker.internal:5000/send";
+     // String uri = "http://localhost:5000/send";
 
-       // return answer to frontend
-       return JSONObject.quote("answer");
+      HttpClient client = HttpClient.newHttpClient();
+      HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
+              .header("content-type", "application/json")
+              .POST(HttpRequest.BodyPublishers.ofString("\"" + messageFromFrontend + "\""))
+              .build();
+
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      System.out.println(response.body());
+
+      // save answer to db
+      userSessionService.update(id, response.body().replaceAll("\"", ""));
+
+      // return answer to frontend
+      return JSONObject.quote(response.body());
    }
 
    @DeleteMapping("/{id}")
